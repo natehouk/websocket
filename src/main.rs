@@ -11,7 +11,7 @@ fn main() {
         "data": {
             "channel": "live_orders_btcusd"
         }
-    }"#.into())).expect("Failed to send msg");
+    }"#.into())).expect("Error sending message");
 
     loop {
         let msg = socket.read_message().expect("Error reading message");
