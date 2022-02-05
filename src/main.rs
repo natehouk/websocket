@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use tungstenite::{connect, Message};
 use url::Url;
 
@@ -29,15 +30,18 @@ fn main() {
         connect(Url::parse("wss://ws.bitstamp.net").unwrap()).expect("Can't connect");
 
     socket
-        .write_message(Message::Text(
-            r#"{
-        "event": "bts:subscribe",
-        "data": {
-            "channel": "live_trades_btcusd"
-        }
-    }"#
+        .write_message(
+            Message::Text(
+                json!({
+                    "event": "bts:subscribe",
+                    "data": {
+                        "channel": "live_trades_btcusd"
+                    }
+                })
+                .to_string(),
+            )
             .into(),
-        ))
+        )
         .expect("Error sending message");
 
     loop {
