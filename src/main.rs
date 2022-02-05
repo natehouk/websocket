@@ -1,5 +1,28 @@
+use serde::{Deserialize, Serialize};
 use url::Url;
 use tungstenite::{connect, Message};
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Trade {
+    data: Data,
+    channel: String,
+    event: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Data {
+    id: u32,
+    amount: f32,
+    amount_str: String,
+    buy_order_id: u64,
+    microtimestamp: String,
+    price: f32,
+    price_str: String,
+    sell_order_id: u64,
+    timestamp: String,
+    #[serde(rename = "type")]
+    _type: u8,
+}
 
 fn main() {
     let (mut socket, _response) = connect(
@@ -9,12 +32,22 @@ fn main() {
     socket.write_message(Message::Text(r#"{
         "event": "bts:subscribe",
         "data": {
-            "channel": "live_orders_btcusd"
+            "channel": "live_trades_btcusd"
         }
     }"#.into())).expect("Error sending message");
 
     loop {
         let msg = socket.read_message().expect("Error reading message");
-        println!("Received: {}", msg);
+        let result: Result<Trade, serde_json::Error> = serde_json::from_str(msg.to_text().unwrap());
+
+        let value = match result {
+            Ok(msg) => msg,
+            Err(err) => {
+                println!("{:?}", err);
+                continue;
+            }
+
+        };
+        println!("{:?}", value);        
     }
 }
