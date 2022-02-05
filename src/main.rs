@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
-use url::Url;
 use tungstenite::{connect, Message};
+use url::Url;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Trade {
@@ -25,16 +25,20 @@ struct Data {
 }
 
 fn main() {
-    let (mut socket, _response) = connect(
-        Url::parse("wss://ws.bitstamp.net").unwrap()
-    ).expect("Can't connect");
+    let (mut socket, _response) =
+        connect(Url::parse("wss://ws.bitstamp.net").unwrap()).expect("Can't connect");
 
-    socket.write_message(Message::Text(r#"{
+    socket
+        .write_message(Message::Text(
+            r#"{
         "event": "bts:subscribe",
         "data": {
             "channel": "live_trades_btcusd"
         }
-    }"#.into())).expect("Error sending message");
+    }"#
+            .into(),
+        ))
+        .expect("Error sending message");
 
     loop {
         let msg = socket.read_message().expect("Error reading message");
@@ -46,8 +50,7 @@ fn main() {
                 println!("{:?}", err);
                 continue;
             }
-
         };
-        println!("{:?}", value);        
+        println!("{:?}", value);
     }
 }
