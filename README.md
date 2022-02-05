@@ -1,3 +1,3 @@
 # websocket
 
-A simple toy websocket to connect to Bitstamp.net and print live trades.
+A simple toy websocket to connect to Bitstamp.net and print live trades written in Rust.
