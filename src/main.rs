@@ -6,6 +6,15 @@ use std::process::exit;
 use tungstenite::{connect, Message};
 use url::Url;
 
+use std::io::{stdin, stdout, Read, Write};
+
+fn pause() {
+    let mut stdout = stdout();
+    stdout.write(b"Press Enter to continue...").unwrap();
+    stdout.flush().unwrap();
+    stdin().read(&mut [0]).unwrap();
+}
+
 enum OrderType {
     Buy = 0,
     Sell = 1,
@@ -22,9 +31,9 @@ struct OrderBook {
 struct LimitPrice {
     price: OrderedFloat<f32>,
 
-    #[derivative(PartialEq = "ignore", PartialOrd = "ignore")]
+    #[derivative(Hash="ignore", PartialEq = "ignore", PartialOrd = "ignore")]
     size: OrderedFloat<f32>,
-    #[derivative(PartialEq = "ignore", PartialOrd = "ignore")]
+    #[derivative(Hash="ignore", PartialEq = "ignore", PartialOrd = "ignore")]
     orders: Vec<Order>,
 }
 
@@ -132,10 +141,8 @@ fn main() {
                             size: OrderedFloat(order.amount),
                             orders: vec![order.clone()],
                         };
-                        println!("{}", order.order_type);
                         match (&order).order_type {
                             buy if buy == OrderType::Buy as u8 => {
-                                order_book.bids.iter().any(|i| i.price == order.price);
                                 let _value = match order_book.bids.binary_search(&limit_price) {
                                     Ok(i) => {
                                         order_book.bids[i].size += order.amount;
@@ -149,7 +156,6 @@ fn main() {
                                 x += 1;
                             }
                             ask if ask == OrderType::Sell as u8 => {
-                                order_book.asks.iter().any(|i| i.price == order.price);
                                 let _value = match order_book.asks.binary_search(&limit_price) {
                                     Ok(i) => {
                                         order_book.asks[i].size += order.amount;
@@ -166,6 +172,57 @@ fn main() {
                     }
                 } else if msg.event == "order_deleted" {
                     println!("ORDER DELETED\n{:?}", msg);
+                    if let Data::Order(order) = msg.data {
+                        let limit_price = LimitPrice {
+                            price: OrderedFloat(order.price),
+                            size: OrderedFloat(order.amount),
+                            orders: vec![order.clone()],
+                        };
+                        match (&order).order_type {
+                            buy if buy == OrderType::Buy as u8 => {
+                                let _value = match order_book.bids.binary_search(&limit_price) {
+                                    Ok(i) => {
+                                        let _value = match order_book.bids[i].orders.binary_search(&order) {
+                                            Ok(j) => {
+                                                order_book.bids[i].orders.remove(j);
+                                                pause();
+                                            }
+                                            Err(_j) => {
+                                                println!("UNABLE TO DELETE ORDER ID {} error {}", order.id, _j);
+                                            }
+                                        };
+                                    }
+                                    Err(_i) => {
+                                        println!("UNABLE TO DELETE ORDER ID {} error {}", order.id, _i);
+                                    }
+                                };
+                                println!("\n\nORDER BOOK\n\n{:?}\n\n\n", order_book);
+                                
+                                x += 1;
+                            }
+                            ask if ask == OrderType::Sell as u8 => {
+                                let _value = match order_book.asks.binary_search(&limit_price) {
+                                    Ok(i) => {
+                                        let _value = match order_book.asks[i].orders.binary_search(&order) {
+                                            Ok(j) => {
+                                                order_book.asks[i].orders.remove(j);
+                                                pause();
+                                            }
+                                            Err(_j) => {
+                                                println!("UNABLE TO DELETE ORDER ID {} error {}", order.id, _j);
+                                            }
+                                        };
+                                    }
+                                    Err(_i) => {
+                                        println!("UNABLE TO DELETE ORDER ID {} error {}", order.id, _i);
+                                    }
+                                };
+                                println!("\n\nORDER BOOK\n\n{:?}\n\n\n", order_book);
+                                
+                            }
+                            _ => (),
+                        }
+                    }
                 } else {
                     println!("UNKNOWN\n{:?}", msg);
                 }
@@ -174,8 +231,8 @@ fn main() {
                 println!("ERROR\n{:?}", err);
             }
         };
-        if x == 2 {
-            exit(0);
-        }
+        //if x == 2 {
+        //    exit(0);
+        //}
     }
 }
