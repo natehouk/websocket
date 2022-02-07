@@ -62,21 +62,15 @@ struct Trade {
 #[derivative(PartialEq, Eq, PartialOrd, Ord, Debug)]
 struct Order {
     id: u64,
-    #[derivative(Ord="ignore", PartialEq="ignore", PartialOrd="ignore")]
     id_str: String,
-    #[derivative(Ord="ignore", PartialEq="ignore", PartialOrd="ignore")]
     order_type: u8,
-    #[derivative(Ord="ignore", PartialEq="ignore", PartialOrd="ignore")]
     datetime: String,
-    #[derivative(Ord="ignore", PartialEq="ignore", PartialOrd="ignore")]
     microtimestamp: String,
     #[derivative(Ord="ignore", PartialEq="ignore", PartialOrd="ignore")]
     amount: f32,
-    #[derivative(Ord="ignore", PartialEq="ignore", PartialOrd="ignore")]
     amount_str: String,
     #[derivative(Ord="ignore", PartialEq="ignore", PartialOrd="ignore")]
     price: f32,
-    #[derivative(Ord="ignore", PartialEq="ignore", PartialOrd="ignore")]
     price_str: String,
 }
 
@@ -171,7 +165,7 @@ fn main() {
                 println!("ERROR\n{:?}", err);
             }
         };
-        if x == 3 {
+        if x == 2 {
             exit(0);
         }
     }
