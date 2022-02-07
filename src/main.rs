@@ -1,10 +1,10 @@
+use derivative::Derivative;
+use ordered_float::OrderedFloat;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::process::exit;
 use tungstenite::{connect, Message};
 use url::Url;
-use ordered_float::OrderedFloat;
-use derivative::Derivative;
-use std::process::exit;
 
 enum OrderType {
     Buy = 0,
@@ -21,10 +21,10 @@ struct OrderBook {
 #[derivative(PartialEq, Eq, PartialOrd, Ord, Debug)]
 struct LimitPrice {
     price: OrderedFloat<f32>,
-    
-    #[derivative(PartialEq="ignore", PartialOrd="ignore")]
+
+    #[derivative(PartialEq = "ignore", PartialOrd = "ignore")]
     size: OrderedFloat<f32>,
-    #[derivative(PartialEq="ignore", PartialOrd="ignore")]
+    #[derivative(PartialEq = "ignore", PartialOrd = "ignore")]
     orders: Vec<Order>,
 }
 
@@ -33,7 +33,7 @@ struct LimitPrice {
 enum Data {
     Trade(Trade),
     Order(Order),
-    None{},
+    None {},
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -66,10 +66,10 @@ struct Order {
     order_type: u8,
     datetime: String,
     microtimestamp: String,
-    #[derivative(Ord="ignore", PartialEq="ignore", PartialOrd="ignore")]
+    #[derivative(Ord = "ignore", PartialEq = "ignore", PartialOrd = "ignore")]
     amount: f32,
     amount_str: String,
-    #[derivative(Ord="ignore", PartialEq="ignore", PartialOrd="ignore")]
+    #[derivative(Ord = "ignore", PartialEq = "ignore", PartialOrd = "ignore")]
     price: f32,
     price_str: String,
 }
@@ -108,13 +108,16 @@ fn main() {
         )
         .expect("Error sending message");
 
-    let mut order_book = OrderBook{ bids: Vec::new(), asks: Vec::new()};
+    let mut order_book = OrderBook {
+        bids: Vec::new(),
+        asks: Vec::new(),
+    };
     let mut x = 0;
 
     loop {
         let msg = socket.read_message().expect("Error reading message");
         let result: Result<Msg, serde_json::Error> = serde_json::from_str(msg.to_text().unwrap());
-        
+
         let _value = match result {
             Ok(msg) => {
                 if msg.event == "bts:subscription_succeeded" {
@@ -124,7 +127,11 @@ fn main() {
                 } else if msg.event == "order_created" {
                     println!("ORDER CREATED\n{:?}", msg.data);
                     if let Data::Order(order) = msg.data {
-                        let limit_price = LimitPrice{price: OrderedFloat(order.price), size: OrderedFloat(order.amount), orders: vec![order.clone()]};
+                        let limit_price = LimitPrice {
+                            price: OrderedFloat(order.price),
+                            size: OrderedFloat(order.amount),
+                            orders: vec![order.clone()],
+                        };
                         println!("{}", order.order_type);
                         match (&order).order_type {
                             buy if buy == OrderType::Buy as u8 => {
@@ -152,7 +159,7 @@ fn main() {
                                 };
                                 println!("ORDER BOOK\n{:?}", order_book)
                             }
-                            _ => ()
+                            _ => (),
                         }
                     }
                 } else if msg.event == "order_deleted" {
