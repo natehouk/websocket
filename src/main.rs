@@ -137,11 +137,12 @@ fn main() {
                             buy if buy == OrderType::Buy as u8 => {
                                 order_book.bids.iter().any(|i| i.price == order.price);
                                 let _value = match order_book.bids.binary_search(&limit_price) {
-                                    Ok(msg) => {
-                                        order_book.bids[msg].size += limit_price.size;
+                                    Ok(i) => {
+                                        order_book.bids[i].size += order.amount;
+                                        order_book.bids[i].orders.push(order);
                                     }
-                                    Err(err) => {
-                                        order_book.bids.insert(err, limit_price);
+                                    Err(i) => {
+                                        order_book.bids.insert(i, limit_price);
                                     }
                                 };
                                 println!("ORDER BOOK\n{:?}", order_book);
@@ -150,11 +151,12 @@ fn main() {
                             ask if ask == OrderType::Sell as u8 => {
                                 order_book.asks.iter().any(|i| i.price == order.price);
                                 let _value = match order_book.asks.binary_search(&limit_price) {
-                                    Ok(msg) => {
-                                        order_book.asks[msg].size += limit_price.size;
+                                    Ok(i) => {
+                                        order_book.asks[i].size += order.amount;
+                                        order_book.asks[i].orders.push(order);
                                     }
-                                    Err(err) => {
-                                        order_book.asks.insert(err, limit_price);
+                                    Err(i) => {
+                                        order_book.asks.insert(i, limit_price);
                                     }
                                 };
                                 println!("ORDER BOOK\n{:?}", order_book)
