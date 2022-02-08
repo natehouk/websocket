@@ -33,3 +33,6 @@ Symbol  : BTC/USD
 0.11632545 @ 42972.40	0.13600000 @ 43006.59
 0.15119658 @ 42972.19	1.00000000 @ 43008.09
 ```
+
+## Reference Implementation
+https://assets.bitstamp.net/static/webapp/examples/diff_order_book_v2.5dabf12d7fe2ab5e69be923d5f1b1cf6e8d3bafb.html
