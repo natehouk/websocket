@@ -36,3 +36,6 @@ Symbol  : BTC/USD
 
 ## Reference Implementation
 https://assets.bitstamp.net/static/webapp/examples/diff_order_book_v2.5dabf12d7fe2ab5e69be923d5f1b1cf6e8d3bafb.html
+
+## Reference API
+https://www.bitstamp.net/websocket/v2/
