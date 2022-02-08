@@ -261,7 +261,7 @@ fn main() {
                                         rev_bids.reverse();
                                         // TODO: implement proper order sweeping
                                         if order_book.bids.len() > 0
-                                            && &order_book.bids[0].price >= &rev_bids[0].price
+                                            && &limit_price.price <= &rev_bids[0].price
                                         {
                                             for bid in rev_bids {
                                                 if limit_price.price <= bid.price {
