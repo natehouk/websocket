@@ -2,7 +2,6 @@ use derivative::Derivative;
 use ordered_float::OrderedFloat;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::process::exit;
 use std::time::Instant;
 use tungstenite::{connect, Message};
 use url::Url;
