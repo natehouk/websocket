@@ -217,11 +217,15 @@ fn main() {
 
     // Spin loop
     loop {
+        // Read message from socket
         let msg = socket.read_message().expect("Error reading message");
+
+        // Deserialize message
         let result: Result<Msg, serde_json::Error> = serde_json::from_str(msg.to_text().unwrap());
 
         let _value = match result {
             Ok(msg) => {
+                // Match on message type
                 if msg.event == "bts:subscription_succeeded" {
                 } else if msg.event == "trade" {
                 } else if msg.event == "order_created" {
@@ -298,6 +302,8 @@ fn main() {
                                                     order_book.bids[i].orders.remove(j);
                                                     if order_book.bids[i].orders.len() == 0 {
                                                         order_book.bids.remove(i);
+                                                    } else {
+                                                        order_book.bids[i].size -= order.amount;
                                                     }
                                                 }
                                                 Err(_) => (),
@@ -315,6 +321,8 @@ fn main() {
                                                     order_book.asks[i].orders.remove(j);
                                                     if order_book.asks[i].orders.len() == 0 {
                                                         order_book.asks.remove(i);
+                                                    } else {
+                                                        order_book.asks[i].size -= order.amount;
                                                     }
                                                 }
                                                 Err(_) => (),
@@ -341,6 +349,11 @@ fn main() {
                                             match order_book.bids[i].orders.binary_search(&order) {
                                                 Ok(j) => {
                                                     order_book.bids[i].orders.remove(j);
+                                                    if order_book.bids[i].orders.len() == 0 {
+                                                        order_book.bids.remove(i);
+                                                    } else {
+                                                        order_book.bids[i].size -= order.amount;
+                                                    }
                                                 }
                                                 Err(_) => (),
                                             };
@@ -355,6 +368,8 @@ fn main() {
                                                 for ask in order_book.asks.clone() {
                                                     if limit_price.price >= ask.price {
                                                         order_book.asks.remove(0);
+                                                    } else {
+                                                        order_book.asks[i].size -= order.amount;
                                                     }
                                                 }
                                             }
@@ -406,7 +421,7 @@ fn main() {
             }
             Err(_) => (),
         };
-        if start.elapsed().as_millis() > 100 {
+        if start.elapsed().as_millis() > 500 {
             start = Instant::now();
             print_order_book(&order_book);
         }
