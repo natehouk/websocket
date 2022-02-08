@@ -360,8 +360,6 @@ fn main() {
                                                 for ask in order_book.asks.clone() {
                                                     if limit_price.price >= ask.price {
                                                         order_book.asks.remove(0);
-                                                    } else {
-                                                        order_book.asks[i].size -= order.amount;
                                                     }
                                                 }
                                             }
@@ -378,6 +376,8 @@ fn main() {
                                                     order_book.asks[i].orders.remove(j);
                                                     if order_book.asks[i].orders.len() == 0 {
                                                         order_book.asks.remove(i);
+                                                    } else {
+                                                        order_book.asks[i].size -= order.amount;
                                                     }
                                                 }
                                                 Err(_) => (),
