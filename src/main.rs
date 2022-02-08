@@ -392,7 +392,7 @@ fn main() {
                                             let mut rev_bids: Vec<LimitPrice> =
                                                 order_book.bids.clone();
                                             rev_bids.reverse();
-                                            if &order_book.bids[0].price >= &rev_bids[0].price {
+                                            if &limit_price.price <= &rev_bids[0].price {
                                                 for bid in rev_bids {
                                                     if limit_price.price <= bid.price {
                                                         order_book.bids.remove(0);
