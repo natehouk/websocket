@@ -5,6 +5,7 @@ use serde_json::json;
 use std::process::exit;
 use tungstenite::{connect, Message};
 use url::Url;
+use std::time::{Duration, Instant};
 
 use std::io::{stdin, stdout, Read, Write};
 
@@ -27,13 +28,13 @@ struct OrderBook {
 }
 
 #[derive(Derivative)]
-#[derivative(PartialEq, Eq, PartialOrd, Ord, Debug)]
+#[derivative(Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
 struct LimitPrice {
-    price: OrderedFloat<f32>,
+    price: OrderedFloat<f64>,
 
-    #[derivative(Hash="ignore", PartialEq = "ignore", PartialOrd = "ignore")]
-    size: OrderedFloat<f32>,
-    #[derivative(Hash="ignore", PartialEq = "ignore", PartialOrd = "ignore")]
+    #[derivative(Hash="ignore", PartialEq = "ignore", Ord = "ignore", PartialOrd = "ignore")]
+    size: OrderedFloat<f64>,
+    #[derivative(Hash="ignore", PartialEq = "ignore", Ord = "ignore", PartialOrd = "ignore")]
     orders: Vec<Order>,
 }
 
@@ -55,11 +56,11 @@ struct Msg {
 #[derive(Serialize, Deserialize, Debug)]
 struct Trade {
     id: u64,
-    amount: f32,
+    amount: f64,
     amount_str: String,
     buy_order_id: u64,
     microtimestamp: String,
-    price: f32,
+    price: f64,
     price_str: String,
     sell_order_id: u64,
     timestamp: String,
@@ -76,14 +77,74 @@ struct Order {
     datetime: String,
     microtimestamp: String,
     #[derivative(Ord = "ignore", PartialEq = "ignore", PartialOrd = "ignore")]
-    amount: f32,
+    amount: f64,
     amount_str: String,
     #[derivative(Ord = "ignore", PartialEq = "ignore", PartialOrd = "ignore")]
-    price: f32,
+    price: f64,
     price_str: String,
 }
 
+fn print_order_book(order_book: &OrderBook) {
+    clearscreen::clear().expect("Error clearing screen");
+    let mut i = 0;
+    for bid in &order_book.bids {
+        if order_book.asks.len() > i {
+            println!("{:010.2} @ {:08.2}\t{:010.2} @ {:08.2}", bid.size, bid.price, order_book.asks[i].size, order_book.asks[i].price);
+        } else {
+            println!("{:010.2} @ {:08.2}\t{:010.2} @ {:08.2}\t", bid.size, bid.price, 0.0, 0.0);
+        }
+        i += 1;
+        if i > 50 {
+            break;
+        }
+    }
+}
+
 fn main() {
+
+    // Create Order Book data structure
+    let mut order_book = OrderBook {
+        bids: Vec::new(),
+        asks: Vec::new(),
+    };
+
+    let mut start = Instant::now();
+
+    let mut x = 0;
+    // if let Data::Order(order) = Data::Order(Order { id: 1455821016551424, id_str: "1455821016551424".to_string(), order_type: 0, datetime: "1644260028".to_string(), microtimestamp: "1644260027526000".to_string(), amount: 0.006, amount_str: "0.00600000".to_string(), price: 43921.93, price_str: "43921.93".to_string() }) {
+    //     let limit_price = LimitPrice {
+    //         price: OrderedFloat(order.price),
+    //         size: OrderedFloat(order.amount),
+    //         orders: vec![order.clone()],
+    //     };
+    //     let _value = match order_book.bids.binary_search(&limit_price) {
+    //         Ok(i) => {
+    //             order_book.bids[i].size += order.amount;
+    //             order_book.bids[i].orders.push(order);
+    //         }
+    //         Err(i) => {
+    //             order_book.bids.insert(i, limit_price);
+    //         }
+    //     };
+    // }
+
+    // if let Data::Order(order) = Data::Order(Order{ id: 1455821016551424, id_str: "1455821016551425".to_string(), order_type: 0, datetime: "1644260028".to_string(), microtimestamp: "1644260027526000".to_string(), amount: 0.006, amount_str: "0.00600000".to_string(), price: 43921.93, price_str: "43921.93".to_string() }) {
+    //     let limit_price = LimitPrice {
+    //         price: OrderedFloat(order.price),
+    //         size: OrderedFloat(order.amount),
+    //         orders: vec![order.clone()],
+    //     };
+    //     let _value = match order_book.bids.binary_search(&limit_price) {
+    //         Ok(i) => {
+    //             order_book.bids[i].size += order.amount;
+    //             order_book.bids[i].orders.push(order);
+    //         }
+    //         Err(i) => {
+    //             order_book.bids.insert(i, limit_price);
+    //         }
+    //     };
+    // }
+    
     let (mut socket, _response) =
         connect(Url::parse("wss://ws.bitstamp.net").unwrap()).expect("Can't connect");
 
@@ -117,11 +178,7 @@ fn main() {
         )
         .expect("Error sending message");
 
-    let mut order_book = OrderBook {
-        bids: Vec::new(),
-        asks: Vec::new(),
-    };
-    let mut x = 0;
+
 
     loop {
         let msg = socket.read_message().expect("Error reading message");
@@ -130,11 +187,8 @@ fn main() {
         let _value = match result {
             Ok(msg) => {
                 if msg.event == "bts:subscription_succeeded" {
-                    println!("CONNECTED\n{:?}", msg);
                 } else if msg.event == "trade" {
-                    println!("TRADE\n{:?}", msg);
                 } else if msg.event == "order_created" {
-                    println!("ORDER CREATED\n{:?}", msg.data);
                     if let Data::Order(order) = msg.data {
                         let limit_price = LimitPrice {
                             price: OrderedFloat(order.price),
@@ -149,10 +203,20 @@ fn main() {
                                         order_book.bids[i].orders.push(order);
                                     }
                                     Err(i) => {
-                                        order_book.bids.insert(i, limit_price);
+                                        order_book.bids.insert(i, limit_price.clone());
+                                        if order_book.asks.len() > 0 {
+                                            if &limit_price.price >= &order_book.asks[0].price {
+                                                let mut i = 0;
+                                                for ask in order_book.asks.clone() {
+                                                    if limit_price.price >= ask.price {
+                                                        order_book.asks.remove(0);
+                                                    }
+                                                    i += 1;
+                                                }
+                                            }
+                                        }
                                     }
                                 };
-                                println!("ORDER BOOK\n{:?}", order_book);
                                 x += 1;
                             }
                             ask if ask == OrderType::Sell as u8 => {
@@ -163,15 +227,24 @@ fn main() {
                                     }
                                     Err(i) => {
                                         order_book.asks.insert(i, limit_price);
+                                        if order_book.bids.len() > 0 {
+                                            if &limit_price.price >= &order_book.bids[0].price {
+                                                let mut i = 0;
+                                                for bid in order_book.bids.clone() {
+                                                    if limit_price.price >= bid.price {
+                                                        order_book.bids.remove(0);
+                                                    }
+                                                    i += 1;
+                                                }
+                                            }
+                                        }
                                     }
                                 };
-                                println!("ORDER BOOK\n{:?}", order_book)
                             }
                             _ => (),
                         }
                     }
                 } else if msg.event == "order_deleted" {
-                    println!("ORDER DELETED\n{:?}", msg);
                     if let Data::Order(order) = msg.data {
                         let limit_price = LimitPrice {
                             price: OrderedFloat(order.price),
@@ -185,18 +258,15 @@ fn main() {
                                         let _value = match order_book.bids[i].orders.binary_search(&order) {
                                             Ok(j) => {
                                                 order_book.bids[i].orders.remove(j);
-                                                pause();
+                                                if order_book.bids[i].orders.len() == 0 {
+                                                    order_book.bids.remove(i);
+                                                }
                                             }
-                                            Err(_j) => {
-                                                println!("UNABLE TO DELETE ORDER ID {} error {}", order.id, _j);
-                                            }
+                                            Err(_) => ()
                                         };
                                     }
-                                    Err(_i) => {
-                                        println!("UNABLE TO DELETE ORDER ID {} error {}", order.id, _i);
-                                    }
+                                    Err(_) => ()
                                 };
-                                println!("\n\nORDER BOOK\n\n{:?}\n\n\n", order_book);
                                 
                                 x += 1;
                             }
@@ -206,18 +276,15 @@ fn main() {
                                         let _value = match order_book.asks[i].orders.binary_search(&order) {
                                             Ok(j) => {
                                                 order_book.asks[i].orders.remove(j);
-                                                pause();
+                                                if order_book.asks[i].orders.len() == 0 {
+                                                    order_book.asks.remove(i);
+                                                }
                                             }
-                                            Err(_j) => {
-                                                println!("UNABLE TO DELETE ORDER ID {} error {}", order.id, _j);
-                                            }
+                                            Err(_) => ()
                                         };
                                     }
-                                    Err(_i) => {
-                                        println!("UNABLE TO DELETE ORDER ID {} error {}", order.id, _i);
-                                    }
+                                    Err(_) => ()
                                 };
-                                println!("\n\nORDER BOOK\n\n{:?}\n\n\n", order_book);
                                 
                             }
                             _ => (),
@@ -227,12 +294,11 @@ fn main() {
                     println!("UNKNOWN\n{:?}", msg);
                 }
             }
-            Err(err) => {
-                println!("ERROR\n{:?}", err);
-            }
+            Err(_) => ()
         };
-        //if x == 2 {
-        //    exit(0);
-        //}
+        if start.elapsed().as_millis() > 100 {
+            start = Instant::now();
+            print_order_book(&order_book);
+        }
     }
 }
