@@ -1,6 +1,6 @@
 # websocket
 
-A simple toy websocket to connect to Bitstamp.net and print the live order book written in Rust.
+A simple toy websocket client to connect to Bitstamp.net and print the live order book written in Rust.
 
 ## How to Run
 To run the project, first install the Rust tool chain: https://www.rust-lang.org/tools/install
