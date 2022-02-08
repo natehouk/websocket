@@ -82,37 +82,88 @@ struct Trade {
 #[derivative(PartialEq, Eq, PartialOrd, Ord, Debug)]
 struct Order {
     id: u64,
+
+    #[derivative(
+        Hash = "ignore",
+        PartialEq = "ignore",
+        Ord = "ignore",
+        PartialOrd = "ignore"
+    )]
     id_str: String,
+    #[derivative(
+        Hash = "ignore",
+        PartialEq = "ignore",
+        Ord = "ignore",
+        PartialOrd = "ignore"
+    )]
     order_type: u8,
+    #[derivative(
+        Hash = "ignore",
+        PartialEq = "ignore",
+        Ord = "ignore",
+        PartialOrd = "ignore"
+    )]
     datetime: String,
+    #[derivative(
+        Hash = "ignore",
+        PartialEq = "ignore",
+        Ord = "ignore",
+        PartialOrd = "ignore"
+    )]
     microtimestamp: String,
-    #[derivative(Ord = "ignore", PartialEq = "ignore", PartialOrd = "ignore")]
+    #[derivative(
+        Hash = "ignore",
+        PartialEq = "ignore",
+        Ord = "ignore",
+        PartialOrd = "ignore"
+    )]
     amount: f64,
     amount_str: String,
-    #[derivative(Ord = "ignore", PartialEq = "ignore", PartialOrd = "ignore")]
+    #[derivative(
+        Hash = "ignore",
+        PartialEq = "ignore",
+        Ord = "ignore",
+        PartialOrd = "ignore"
+    )]
     price: f64,
+    #[derivative(
+        Hash = "ignore",
+        PartialEq = "ignore",
+        Ord = "ignore",
+        PartialOrd = "ignore"
+    )]
     price_str: String,
 }
 
 fn print_order_book(order_book: &OrderBook) {
+    // Clear screen
     clearscreen::clear().expect("Error clearing screen");
+
+    // Print info
+    println!("Status  : Connected");
+    println!("Exchange: Bitstamp.net");
+    println!("Symbol  : BTC/USD");
+    println!();
+    println!("         Bids                    Asks");
+
+    // Print order book
     let mut i = 0;
     let mut rev_bids = order_book.bids.clone();
     rev_bids.reverse();
     for bid in rev_bids {
         if order_book.asks.len() > i {
             println!(
-                "{:010.2} @ {:08.2}\t{:010.2} @ {:08.2}",
+                "{:08.08} @ {:08.2}\t{:08.08} @ {:08.2}",
                 bid.size, bid.price, order_book.asks[i].size, order_book.asks[i].price
             );
         } else {
             println!(
-                "{:010.2} @ {:08.2}\t{:010.2} @ {:08.2}\t",
+                "{:08.08} @ {:08.2}\t{:08.08} @ {:08.2}\t",
                 bid.size, bid.price, 0.0, 0.0
             );
         }
         i += 1;
-        if i > 50 {
+        if i > 10 {
             break;
         }
     }
@@ -188,16 +239,17 @@ fn main() {
                                         order_book.bids[i].orders.push(order);
                                     }
                                     Err(i) => {
-                                        order_book.bids.insert(i, limit_price.clone());
                                         // TODO: implement proper order sweeping
-                                        if order_book.asks.len() > 0 {
-                                            if &limit_price.price >= &order_book.asks[0].price {
-                                                for ask in order_book.asks.clone() {
-                                                    if limit_price.price >= ask.price {
-                                                        order_book.asks.remove(0);
-                                                    }
+                                        if order_book.asks.len() > 0
+                                            && &limit_price.price >= &order_book.asks[0].price
+                                        {
+                                            for ask in order_book.asks.clone() {
+                                                if limit_price.price >= ask.price {
+                                                    order_book.asks.remove(0);
                                                 }
                                             }
+                                        } else {
+                                            order_book.bids.insert(i, limit_price.clone());
                                         }
                                     }
                                 };
@@ -209,19 +261,19 @@ fn main() {
                                         order_book.asks[i].orders.push(order);
                                     }
                                     Err(i) => {
-                                        order_book.asks.insert(i, limit_price.clone());
+                                        let mut rev_bids: Vec<LimitPrice> = order_book.bids.clone();
+                                        rev_bids.reverse();
                                         // TODO: implement proper order sweeping
-                                        if order_book.bids.len() > 0 {
-                                            let mut rev_bids: Vec<LimitPrice> =
-                                                order_book.bids.clone();
-                                            rev_bids.reverse();
-                                            if &order_book.bids[0].price >= &rev_bids[0].price {
-                                                for bid in rev_bids {
-                                                    if limit_price.price <= bid.price {
-                                                        order_book.bids.remove(0);
-                                                    }
+                                        if order_book.bids.len() > 0
+                                            && &order_book.bids[0].price >= &rev_bids[0].price
+                                        {
+                                            for bid in rev_bids {
+                                                if limit_price.price <= bid.price {
+                                                    order_book.bids.remove(0);
                                                 }
                                             }
+                                        } else {
+                                            order_book.asks.insert(i, limit_price.clone());
                                         }
                                     }
                                 };
@@ -289,14 +341,25 @@ fn main() {
                                             match order_book.bids[i].orders.binary_search(&order) {
                                                 Ok(j) => {
                                                     order_book.bids[i].orders.remove(j);
-                                                    if order_book.bids[i].orders.len() == 0 {
-                                                        order_book.bids.remove(i);
-                                                    }
                                                 }
                                                 Err(_) => (),
                                             };
+                                        order_book.bids[i].size += order.amount;
+                                        order_book.bids[i].orders.push(order);
                                     }
-                                    Err(_) => (),
+                                    Err(i) => {
+                                        order_book.bids.insert(i, limit_price.clone());
+                                        // TODO: implement proper order sweeping
+                                        if order_book.asks.len() > 0 {
+                                            if &limit_price.price >= &order_book.asks[0].price {
+                                                for ask in order_book.asks.clone() {
+                                                    if limit_price.price >= ask.price {
+                                                        order_book.asks.remove(0);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                 };
                             }
                             ask if ask == OrderType::Sell as u8 => {
@@ -312,8 +375,25 @@ fn main() {
                                                 }
                                                 Err(_) => (),
                                             };
+                                        order_book.asks[i].size += order.amount;
+                                        order_book.asks[i].orders.push(order);
                                     }
-                                    Err(_) => (),
+                                    Err(i) => {
+                                        order_book.asks.insert(i, limit_price.clone());
+                                        // TODO: implement proper order sweeping
+                                        if order_book.bids.len() > 0 {
+                                            let mut rev_bids: Vec<LimitPrice> =
+                                                order_book.bids.clone();
+                                            rev_bids.reverse();
+                                            if &order_book.bids[0].price >= &rev_bids[0].price {
+                                                for bid in rev_bids {
+                                                    if limit_price.price <= bid.price {
+                                                        order_book.bids.remove(0);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                 };
                             }
                             _ => (),
