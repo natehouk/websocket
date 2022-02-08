@@ -1,3 +1,4 @@
+use chrono::Utc;
 use derivative::Derivative;
 use ordered_float::OrderedFloat;
 use serde::{Deserialize, Serialize};
@@ -133,6 +134,7 @@ fn print_order_book(order_book: &OrderBook) {
     println!("Status  : Connected");
     println!("Exchange: Bitstamp.net");
     println!("Symbol  : BTC/USD");
+    println!("Time    : {} UTC", Utc::now().format("%a %b %e %T %Y"));
     println!();
     println!("         Bids                    Asks");
 
