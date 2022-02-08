@@ -405,9 +405,6 @@ fn main() {
                             _ => (),
                         }
                     }
-                } else {
-                    println!("Unknown message\n{:?}", msg);
-                    exit(0);
                 }
             }
             Err(_) => (),
