@@ -2,17 +2,20 @@
 
 A simple toy websocket to connect to Bitstamp.net and print the live order book written in Rust.
 
-##
+## How to Run
 To run the project, first install the Rust tool chain: https://www.rust-lang.org/tools/install
 
 Then run the following commands:
 
+```
 $ git clone git@github.com:natehouk/websocket.git
 $ cd websocket
 $ cargo run
+```
 
 ## Example Output
 
+```
 Status  : Connected
 Exchange: Bitstamp.net
 Symbol  : BTC/USD
@@ -29,3 +32,4 @@ Symbol  : BTC/USD
 0.11332652 @ 42980.95	0.11623247 @ 43006.09
 0.11632545 @ 42972.40	0.13600000 @ 43006.59
 0.15119658 @ 42972.19	1.00000000 @ 43008.09
+```
