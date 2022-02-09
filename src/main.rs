@@ -265,7 +265,7 @@ fn main() {
                                         {
                                             for bid in rev_bids {
                                                 if limit_price.price <= bid.price {
-                                                    order_book.bids.remove(order_book.bids.len());
+                                                    order_book.bids.remove(order_book.bids.len()-1);
                                                 }
                                             }
                                         } else {
@@ -395,7 +395,7 @@ fn main() {
                                             if &limit_price.price <= &rev_bids[0].price {
                                                 for bid in rev_bids {
                                                     if limit_price.price <= bid.price {
-                                                        order_book.bids.remove(order_book.bids.len());
+                                                        order_book.bids.remove(order_book.bids.len() - 1);
                                                     }
                                                 }
                                             }
