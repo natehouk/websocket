@@ -145,13 +145,13 @@ fn print_order_book(order_book: &OrderBook) {
     for bid in rev_bids {
         if order_book.asks.len() > i {
             println!(
-                "{:08.08} @ {:08.2}\t{:08.08} @ {:08.2}",
+                "{:08.8} @ {:08.2}\t{:08.8} @ {:08.2}",
                 bid.size, bid.price, order_book.asks[i].size, order_book.asks[i].price
             );
         } else {
             println!(
-                "{:08.08} @ {:08.2}\t{:08.08} @ {:08.2}\t",
-                bid.size, bid.price, 0.0, 0.0
+                "{:08.8} @ {:08.2}",
+                bid.size, bid.price
             );
         }
         i += 1;
@@ -265,7 +265,7 @@ fn main() {
                                         {
                                             for bid in rev_bids {
                                                 if limit_price.price <= bid.price {
-                                                    order_book.bids.remove(order_book.bids.len()-1);
+                                                    order_book.bids.remove(order_book.bids.len() - 1);
                                                 }
                                             }
                                         } else {
